@@ -20,3 +20,5 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::get('/vocabulary-questions', [VocabularyController::class, 'getVocabularyQuestions']);
+Route::post('/vocabulary/update-status', [VocabularyController::class, 'updateQuestionStatus']);
+Route::post('/vocabulary/reset-quiz', [VocabularyController::class, 'resetQuizQuestions']);

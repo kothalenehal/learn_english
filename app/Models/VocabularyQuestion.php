@@ -15,7 +15,8 @@ class VocabularyQuestion extends Model
         'correct_answer', 
         'difficulty_level', 
         'type',
-        'isanswered'
+        'isanswered',
+        'user_id'
     ];
 
     protected $casts = [
