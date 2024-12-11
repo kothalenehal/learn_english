@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use App\Models\VocabularyQuestion;
+use App\Models\QuestionAnswer;
 use Illuminate\Validation\ValidationException;
 
 class VocabularyController extends Controller
@@ -35,19 +36,25 @@ class VocabularyController extends Controller
         try {
             $validatedData = $request->validate([
                 'question_id' => 'required|exists:vocabulary_questions,id',
-                'isanswered' => 'required|in:0,1',
-                'user_id' => 'required'
+                'user_id' => 'required',
+                'answer' => 'nullable|string', 
+                'isanswered' => 'required'
             ]);
 
-            $question = VocabularyQuestion::findOrFail($validatedData['question_id']);
-
-            $question->isanswered = $validatedData['isanswered'];
-            $question->user_id = $validatedData['user_id'];
-            $question->save();
+            $questionAnswer = QuestionAnswer::updateOrCreate(
+                [
+                    'user_id' => $validatedData['user_id'],
+                    'question_id' => $validatedData['question_id']
+                ],
+                [
+                    'answer' => $validatedData['answer'] ?? null,
+                    'isanswered' => $validatedData['isanswered']
+                ]
+            );
 
             return response()->json([
-                'message' => 'Question status updated successfully',
-                'question' => $question
+                'message' => 'Question answer saved successfully',
+                'question_answer' => $questionAnswer
             ]);
 
         } catch (ValidationException $e) {
@@ -71,13 +78,13 @@ class VocabularyController extends Controller
                 'question_date' => 'required|date_format:Y-m-d'
             ]);
 
-            $updatedCount = VocabularyQuestion::where('user_id', $validatedData['user_id'])
-                ->where('question_date', $validatedData['question_date'])
-                ->update(['isanswered' => 0]);
+            $deletedCount = QuestionAnswer::whereHas('vocabularyQuestion', function($q) use ($validatedData) {
+                $q->where('question_date', $validatedData['question_date']);
+            })->where('user_id', $validatedData['user_id'])->delete();
 
             return response()->json([
                 'message' => 'Quiz questions reset successfully',
-                'updated_questions_count' => $updatedCount
+                'deleted_answers_count' => $deletedCount
             ]);
 
         } catch (ValidationException $e) {
